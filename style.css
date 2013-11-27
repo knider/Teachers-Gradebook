@@ -1,0 +1,41 @@
+
+body, p, td, h2, h1, li
+{ 
+	font-family: Lato !important;
+}
+.remove_button
+{
+	display: inline;
+	margin-left: 10px;
+}
+
+.welcome {
+	float: right;
+}
+
+.formRow 
+{
+	float: left;
+    height: 50px;
+    margin-right: 15px;
+    padding-bottom: 8px;
+    padding-top: 10px;
+    width: 222px;
+}
+
+.formRow input 
+{
+	display: block;
+    float: left;
+    width: 200px;
+}
+
+.formRow select 
+{
+    width: 200px;
+}
+
+input[type=submit] {
+	display:inline;
+	margin: 10px;
+}
