@@ -1,12 +1,13 @@
 <?php	
 //connect to DB
-global $mysqli;
-$mysqli = new mysqli(DB_HOST,DB_USER,DB_PASS,DB_NAME);
-if ($mysqli->connect_errno){ 
-	echo "Connection Error " . $mysqli->connect_errno . " " . $mysqli->connect_error; 
+try {
+	global $pdo;
+	$pdo = new PDO('mysql:host=' . DB_HOST . ';dbname='. DB_NAME, DB_USER, DB_PASS);
+} catch (PDOException $e) 
+{
+	echo 'Error connecting to database';
+	exit();
 }
-
-
 
 function check_session() {
 	session_start();
@@ -32,7 +33,7 @@ function sessionString($email){
 function get_header(){
 	global $title;
 	echo '<!DOCTYPE html>
-	<html lang="en_US">
+	<html lang="en">
 	<head>
 		<title>';
 	if (!$title) echo SiteName;
@@ -72,35 +73,10 @@ function get_page_header(){
 		echo '<div id="mainbuttons" class="ui-grid-a">
 			<div class="ui-block-a">
 				<a href="/" data-icon="back" data-ajax="false" data-role="button" data-rel="back" data-mini="true">Back</a>
-				<p id="here1"></p>
 			</div>
 			<div class="ui-block-b"><a href="'.Home.'" data-ajax="false" data-role="button" data-mini="true">Home</a>
 			</div>
 			
-		</div>';
-	}
-	
-	function get_item_menu(){
-		if(!$itemNumber) { $itemNumber = array_key_exists("itemnumber", $_GET) ? $_GET["itemnumber"] : ""; }
-		echo '<div id="mainbuttons" class="ui-grid-a">
-			<div class="ui-block-a">
-				<a href="/" data-icon="back" data-ajax="false" data-role="button" data-rel="back" data-mini="true">Back</a>
-				<p id="here1"></p>
-			</div>
-			<div class="ui-block-b"><a href="'.Home.'" data-ajax="false" data-role="button" data-mini="true">Home</a>
-			</div>
-			
-		</div>
-		<div id="secondary buttons" class="ui-grid-a">
-			<div class="ui-block-a">
-					<a href="edit_item.php?itemNumber='.$itemNumber.'" data-ajax="false" data-role="button" data-mini="true">Edit Item</a>
-					<p id="here1">
-					</p>
-			</div>
-			<div class="ui-block-b">
-				<a href="add_borrower.php" data-role="button" data-ajax="false" data-mini="true">+ Borrower</a>
-				<p id="here3"></p>
-			</div>
 		</div>';
 	}
 	
@@ -108,7 +84,6 @@ function get_page_header(){
 		echo '<div id="mainbuttons" class="ui-grid-b">
 			<div class="ui-block-a">
 				<a href="/" data-icon="back" data-ajax="false" data-role="button" data-rel="back" data-mini="true">Back</a>
-				<p id="here1"></p>
 			</div>
 			<div class="ui-block-b"><a href="'.Home.'" data-ajax="false" data-role="button" data-mini="true">Home</a>
 			</div>
@@ -122,15 +97,13 @@ function get_page_header(){
 		echo '<div id="mainbuttons" class="ui-grid-a">
 			<div class="ui-block-a">
 					<a href="class.php" data-role="button" data-mini="true">+ Class</a>
-					<p id="here3"></p>
 			</div>
 			<div class="ui-block-b">
 					<a href="student.php" data-role="button" data-mini="true">+ Student</a>
-					<p id="here3"></p>
 			</div>
 			
 		</div>                
-		<div id="secondary buttons" class="ui-grid-a">
+		<div id="secondary_buttons" class="ui-grid-a">
 			<div class="ui-block-a">
 					<a href="assignment.php" data-role="button" data-mini="true">+ Assignment</a>
 					<p id="here1">
@@ -145,18 +118,17 @@ function get_page_header(){
 	//Get classes
 	function get_classes() {
 		global $user;
-		global $mysqli;
+		global $pdo;
 		global $title;
-		if (!($stmt = $mysqli->prepare("SELECT id, name FROM classes WHERE user=?"))) {echo "Prepare failed: " .$stmt->errno." ".$stmt->error;}
-		if (!$stmt->bind_param('s',$user)) { echo "Binding result failed: (" . $mysqli->errno . ")" . $mysqli->error; }
-		if (!$stmt->execute()){ echo "Execute failed: "  . $stmt->errno . " " . $stmt->error; } 
-		if (!$stmt->bind_result($class_id, $class_name)) { echo "Binding result failed: (" . $mysqli->errno . ")" . $mysqli->error; }
-		else {
-			$stmt->store_result();
+		$params = array(':username' => $user);
+		$stmt = $pdo->prepare("SELECT id, name FROM classes WHERE user= :username");
+		if ($stmt->execute($params)) {
+			$stmt->bindColumn('id',$class_id);
+			$stmt->bindColumn('name',$class_name);
 			$class_list = ($title === "Grades") ? "<form id=\"classList\" method=\"post\" action=\"get_grades.php\" data-ajax=\"false\">" : "";
-			$class_list .= "<div><label for=\"className\">Select a Class:</label><select id=\"classes\" name=\"className\">\n";
-			$class_list .= "<option value=\"\"></option>\n";
-			while($stmt->fetch()){
+			$class_list .= "<div><label for=\"classes\">Select a Class:</label><select id=\"classes\" name=\"className\">\n";
+			$class_list .= "<option value=\"\">Select a class</option>\n";
+			while($row = $stmt->fetch()) {
 				$class_list .= "<option value=\"" .$class_id. "\">" .$class_name. "</option>\n";
 			}
 			$class_list .= ($title === "Grades") ? "</select></div></form>\n" : "</select></div>\n";

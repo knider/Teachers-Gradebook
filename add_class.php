@@ -9,24 +9,13 @@
 	else {
 		//check for class existence 
 		//src: http://stackoverflow.com/questions/14439009/php-check-existance-of-record-in-the-database-before-insertion
-		$query = $mysqli->query("SELECT id FROM classes WHERE name='".$className."' AND user='".$user."'");
+		$params = array(':className' => $className, ':user' => $user);
+		$query = $pdo->prepare("SELECT COUNT(*) FROM classes WHERE name=:className AND user=:user");
+		if (!($query->execute($params))) { echo "Query failed"; exit(); }
+		if ($query->fetchColumn() != 0) { echo "Class already exists"; exit(); }
 		
-		if($query->num_rows != 0) echo "Class already exists";
-		else {
-			if (!($stmt = $mysqli->prepare("INSERT INTO classes(name,user) values(?,?)"))) {
-				echo "Prepare failed: "  . $stmt->errno . " " . $stmt->error;
-			}
-			
-			if (!($stmt->bind_param("ss", $className, $user))) {
-				echo "Bind failed: "  . $stmt->errno . " " . $stmt->error;
-			}
-
-			if (!$stmt->execute()){ echo "Execute failed: "  . $stmt->errno . " " . $stmt->error; } 
-			
-			//success
-			else { 
-				echo "Class ". $className ." added";
-			}
-		}
+		$stmt = $pdo->prepare("INSERT INTO classes(name,user) values(:className, :user)");
+		if (!($stmt->execute($params))) { echo "Execture failed"; exit(); }
+		echo "Class ". $className ." added";
 	}
 ?>

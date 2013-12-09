@@ -2,45 +2,23 @@
 	session_start();
 	include(dirname(__FILE__).'/loader.php');
 
-	$username_in = array_key_exists("username", $_POST) ? mysqli_real_escape_string($mysqli,$_POST["username"]) : '';
-	$pass = array_key_exists("password", $_POST) ? mysqli_real_escape_string($mysqli,$_POST["password"]) : '';
+	$username = array_key_exists("username", $_POST) ? $_POST["username"] : '';
+	$pass = array_key_exists("password", $_POST) ? $_POST["password"] : '';
 	
-	//phpinfo();
-	//check login, see if name already in use
-	if(array_key_exists("form", $_POST)) { 
-		if (!($stmt = $mysqli->prepare("SELECT username FROM user WHERE username=?"))) {
-			echo "Check Prepare failed: "  . $stmt->errno . " " . $stmt->error;
-		}
-		if (!($stmt->bind_param('s', $username_in))) { echo "Bind failed: "  . $stmt->errno . " " . $stmt->error; }
+	if($username && $pass) {
+		//check login, see if name already in use
+		$params = array(':user' => $username);
+		$query = $pdo->prepare("SELECT COUNT(*) FROM user WHERE username=:user");
+		if (!($query->execute($params))) { echo "Query failed"; exit(); }
+		if ($query->fetchColumn() != 0) { echo "Username already exists"; exit(); }
 		
-		if (!$stmt->execute()){  echo "Execute1 failed: "  . $stmt->errno . " " . $stmt->error; }
-		
-		if (!$stmt->bind_result($username_out)) {
-			echo "Binding result failed: (" . $mysqli->errno . ")" . $mysqli->error;
-		}
-		
-		else { //no errors 
-			$stmt->store_result();
-			
-			if (!$stmt->num_rows) //go ahead and create the login
-			{ 				
-				$stmt->close();
-				if (!($stmt = $mysqli->prepare("INSERT INTO user (username,password) VALUES (?,?)" ))) {
-					echo "Insert Prepare failed: " . $stmt->errno . " " . $stmt->error;
-				}
-				
-				if (!($stmt->bind_param("ss", $username_in, $pass))) { echo "Bind failed: "  . $stmt->errno . " " . $stmt->error; } 
-
-				if (!$stmt->execute()){ echo "Execute2 failed: "  . $stmt->errno . " " . $stmt->error; } 
-				
-				else { //no errors
-					echo "Username " . $username_in . " created. Please <a href=\"index.php\">login</a>.";
-					//$error_string .= "Username created.";
-				}
-			} else { //if there is a login already
-				echo "Username " . $username_in .  " already exists, please try a different username.";
-			
-			}
-		}
+		$params = array(':user' => $username, ':pass' => $pass);
+		$stmt = $pdo->prepare("INSERT INTO user (username,password) VALUES (:user,:pass)");
+		if (!($stmt->execute($params))) { echo "Execute failed"; exit(); }
+					
+		echo "Username " . $username . " created. Please <a href=\"login.php\">login</a>.";
+	
+	} else { //username or password missing
+		echo "You must enter a username and password";
 	}
 ?>
