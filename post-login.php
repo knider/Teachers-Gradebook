@@ -2,7 +2,7 @@
 	session_start();
 	ini_set('display_errors', 'On');
 	$loggedin = 0;
-	if (isset($_SESSION['user_name'])) 
+	if (isset($_SESSION['string'])) 
 	{ //logged in
 		$loggedin = 1;
 		session_write_close();
